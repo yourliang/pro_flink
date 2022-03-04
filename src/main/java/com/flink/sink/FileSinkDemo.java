@@ -15,7 +15,7 @@ public class FileSinkDemo
         env.setRuntimeMode(RuntimeExecutionMode.AUTOMATIC);
 
         //TODO 1.source
-        DataStream<String> ds = env.readTextFile("data/input/words.txt");
+        DataStream<String> ds = env.readTextFile("D://data/input/words.txt");
 
         //TODO 2.transformation
         //TODO 3.sink
@@ -23,8 +23,8 @@ public class FileSinkDemo
         ds.print("输出标识");
         ds.printToErr();//会在控制台上以红色输出
         ds.printToErr("输出标识");//会在控制台上以红色输出
-        ds.writeAsText("data/output/result1").setParallelism(1);
-        ds.writeAsText("data/output/result2").setParallelism(2);
+        ds.writeAsText("D://data/output/result1").setParallelism(1);
+        ds.writeAsText("D://data/output/result2").setParallelism(2);
 
         //TODO 4.execute
         env.execute();
