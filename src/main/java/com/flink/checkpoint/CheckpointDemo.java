@@ -13,6 +13,7 @@ import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
 import org.apache.flink.util.Collector;
 
@@ -69,12 +70,23 @@ public class CheckpointDemo {
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);//默认为1
 
         //2.Source
-        DataStream<String> linesDS = env.socketTextStream("node1", 9999);
+        //准备kafka连接参数
+        Properties props = new Properties();
+        props.setProperty("bootstrap.servers", "192.168.3.88:9092");//集群地址
+        props.setProperty("group.id", "console-consumer-48062");//消费者组id
+        props.setProperty("auto.offset.reset", "latest");//latest有offset记录从记录位置开始消费,没有记录从最新的/最后的消息开始消费 /earliest有offset记录从记录位置开始消费,没有记录从最早的/最开始的消息开始消费
+        props.setProperty("flink.partition-discovery.interval-millis", "5000");//会开启一个后台线程每隔5s检测一下Kafka的分区情况,实现动态分区检测
+        props.setProperty("enable.auto.commit", "true");//自动提交(提交到默认主题,后续学习了Checkpoint后随着Checkpoint存储在Checkpoint和默认主题中)
+        props.setProperty("auto.commit.interval.ms", "2000");//自动提交的时间间隔
+        //使用连接参数创建FlinkKafkaConsumer/kafkaSource
+        FlinkKafkaConsumer<String> kafkaSource = new FlinkKafkaConsumer<String>("cdm_order_cube_detail_test", new SimpleStringSchema(), props);
+        //使用kafkaSource
+        DataStream<String> kafkaDS = env.addSource(kafkaSource);
 
 
         //3.Transformation
         //3.1切割出每个单词并直接记为1
-        DataStream<Tuple2<String, Integer>> wordAndOneDS = linesDS.flatMap(new FlatMapFunction<String, Tuple2<String, Integer>>() {
+        DataStream<Tuple2<String, Integer>> wordAndOneDS = kafkaDS.flatMap(new FlatMapFunction<String, Tuple2<String, Integer>>() {
             @Override
             public void flatMap(String value, Collector<Tuple2<String, Integer>> out) throws Exception {
                 //value就是每一行
@@ -85,11 +97,13 @@ public class CheckpointDemo {
             }
         });
 
+
         //3.2分组
         //注意:批处理的分组是groupBy,流处理的分组是keyBy
         KeyedStream<Tuple2<String, Integer>, String> groupedDS = wordAndOneDS.keyBy(t -> t.f0);
         //3.3聚合
         DataStream<Tuple2<String, Integer>> aggResult = groupedDS.sum(1);
+        aggResult.print();
 
         DataStream<String> result = (SingleOutputStreamOperator<String>) aggResult.map(new RichMapFunction<Tuple2<String, Integer>, String>() {
             @Override
@@ -101,10 +115,10 @@ public class CheckpointDemo {
         //4.sink
         result.print();
 
-        Properties props = new Properties();
+       /* Properties props = new Properties();
         props.setProperty("bootstrap.servers", "node1:9092");
         FlinkKafkaProducer<String> kafkaSink = new FlinkKafkaProducer<>("flink_kafka", new SimpleStringSchema(), props);
-        result.addSink(kafkaSink);
+        result.addSink(kafkaSink);*/
 
         //5.execute
         env.execute();
