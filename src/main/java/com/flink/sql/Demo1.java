@@ -10,6 +10,7 @@ import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
+import java.sql.Timestamp;
 import java.util.Arrays;
 
 import static org.apache.flink.table.api.Expressions.$;
@@ -52,9 +53,9 @@ select * from tableA where amount > 2
 union
  select * from tableB where amount > 1
          */
-        String sql = "select * from "+tableA+" where amount > 2 \n" +
+        String sql = "select user, product, amount, DATE_FORMAT(NOW(), 'yyyy-MM-dd') as tp from "+tableA+" where amount > 2 \n" +
                 "union \n" +
-                " select * from tableB where amount > 1";
+                " select user, product, amount, DATE_FORMAT(NOW(), 'yyyy-MM-dd') as tp from tableB where amount > 1";
 
         Table resultTable = tenv.sqlQuery(sql);
         resultTable.printSchema();
@@ -82,5 +83,16 @@ union
         public Long user;
         public String product;
         public int amount;
+
+
+        public Order(Long user, String product, int amount) {
+            this.user = user;
+            this.product = product;
+            this.amount = amount;
+        }
+
+
+
+        public String tp;
     }
 }
