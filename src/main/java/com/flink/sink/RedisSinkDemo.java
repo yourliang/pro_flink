@@ -16,7 +16,9 @@ import org.apache.flink.util.Collector;
 /**
  * Desc 演示Flink-Connectors-三方提供的RedisSink
  */
-public class RedisSinkDemo {
+public class
+
+RedisSinkDemo {
     public static void main(String[] args) throws Exception {
         //TODO 0.env
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
