@@ -16,7 +16,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 /**
  * @author liang
  * @date 2022-02-16
- * @Desc 演示基于时间的滚动和滑动窗口
+ * @Desc 演示基于时间的滚动和滑动窗口   是可以查看开窗的起止时间的
  */
 public class TimeWindow {
     public static void main(String[] args) throws Exception {
@@ -49,6 +49,9 @@ public class TimeWindow {
                 //of(Time size, Time slide)
                 .window(SlidingProcessingTimeWindows.of(Time.seconds(10),Time.seconds(5)))
                 .sum("count");
+
+
+
 
         //TODO 3.sink
         //result1.print();
